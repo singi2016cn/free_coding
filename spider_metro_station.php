@@ -28,7 +28,7 @@ $js = file_get_contents('http://www.szmc.net/public/scripts/sites.js');
         console.log(sites);
         function metro_station(){
             console.log(1);
-            $.post('save_metro_stations.php',{site1:site1},function(res){
+            $.post('save_metro_stations.php',{xls:xls[0],site:sites[0]},function(res){
                 console.log(res);
             },'json');
         }
