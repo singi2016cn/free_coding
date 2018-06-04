@@ -5,6 +5,7 @@
         "lcobucci/jwt": "^3.2",
         "phpseclib/phpseclib": "^2.0",
         "niklaslu/php-rsa": "^1.0",
-        "respect/validation": "^1.1"
+        "respect/validation": "^1.1",
+        "fzaninotto/faker": "^1.7"
     }
 }

@@ -6,72 +6,68 @@
  * Time: 14:33
  */
 
-$level = [
-    1 => 10,
-    2 => 20,
-    3 => 40,
-    4 => 80,
-    5 => 160,
-    6 => 320,
-    7 => 640,
-    8 => 1280,
-    9 => 2560,
-    10 => 5120,
-];
+define('ROOT_PATH',dirname(__DIR__).DIRECTORY_SEPARATOR);
 
-$singi = [
-    'name'=>'singi',
-    'hp'=>55,
-    'ack'=>10,
-    'def'=>10,
-    'exp'=>0,
-    'level'=>1
-];
+require_once ROOT_PATH . 'vendor/autoload.php';
+require_once 'func.php';
+require_once ROOT_PATH . 'config/db.php';
 
-$enemy = [
-    'name'=>'silly',
-    'hp'=>35,
-    'ack'=>20,
-    'def'=>3,
-    'exp'=>12,
-    'level'=>1
-];
+while (1){
+    $singi = $db->get('property',['name','level','exp','hp','ack','def'],['user_id'=>1]);
 
-echo "game start, {$singi['name']}({$singi['level']}) vs {$enemy['name']}({$enemy['level']}) !!!";
+    if (!$singi) break;
 
-//等到本回合hp
-$singi['cur_hp'] = $singi['hp'];
-$enemy['cur_hp'] = $enemy['hp'];
+    $singi['cur_hp'] = $singi['hp'];
 
-//等到本回合dmg
-$singi['dmg'] = $singi['ack'] - $enemy['def'];
-$enemy['dmg'] = $enemy['ack'] - $singi['def'];
+    $enemy = find_enemy($singi['level']);
+    echo "\n---";
+    echo "\n遇到敌人，开始战斗...";
+    echo "\n{$singi['name']}({$singi['level']}) vs {$enemy['name']}({$enemy['level']})!";
+    $enemy['cur_hp'] = $enemy['hp'];
 
-while ($singi['hp'] > 0 || $enemy['hp'] > 0){
+    //当前回合dmg
+    $singi['dmg'] = ensure_min_eq_zero($singi['ack'] - $enemy['def']);
+    $enemy['dmg'] = ensure_min_eq_zero($enemy['ack'] - $singi['def']);
 
-    $singi['cur_hp'] -= $enemy['dmg'];//计算剩余生命值
-    if ($singi['cur_hp'] < 1){
-        echo "\ngame over, {$singi['name']} failed !!!";
-        break;
-    }
-    echo "\n{$enemy['name']} attack {$singi['name']},hurt {$enemy['dmg']},rest cur_hp {$singi['cur_hp']}";
-    sleep(1);
-
-    $enemy['cur_hp'] -= $singi['dmg'];
-    if ($enemy['cur_hp'] < 1){
-        echo "\ngame over, {$singi['name']} win !!! get exp {$enemy['exp']}";
-        $singi['exp'] += $enemy['exp'];
-        if ($singi['exp'] > $level[$singi['level']]){
-            $singi['level'] += 1;
-            $singi['hp'] += 5;
-            $singi['ack'] += 5;
-            $singi['def'] += 5;
-            echo "\n{$singi['name']} level up !!!\nnow is level 2,[+5,+5,+5]=>[{$singi['hp']},{$singi['ack']},{$singi['def']}]";
+    while (1){
+        if($singi['dmg'] == 0 && $enemy['dmg'] == 0){
+            echo "\n---";
+            break;
         }
-        break;
+
+        $singi['cur_hp'] -= $enemy['dmg'];//计算剩余生命值
+        if ($singi['cur_hp'] < 1){
+            echo "\n{$singi['name']} 被击败了!游戏结束";
+            echo "\n---";
+            break;
+        }
+        echo "\n{$enemy['name']} 攻击了 {$singi['name']} 1 次,造成了 {$enemy['dmg']} 伤害";
+        sleep(1);
+
+        $enemy['cur_hp'] -= $singi['dmg'];
+        if ($enemy['cur_hp'] < 1){
+            echo "\n{$singi['name']} 赢得了胜利!获得经验值 {$enemy['exp']}";
+            //TODO 是否获得宝物
+
+            //是否升级
+            $update_data['exp'] = $singi['exp'] += $enemy['exp'];
+            if ($singi['exp'] > $level_singi[$singi['level']]){
+                $update_data['level'] = $singi['level'] += 1;
+                $update_data['hp'] =$singi['hp'] += 5;
+                $update_data['ack'] =$singi['ack'] += 5;
+                $update_data['def'] =$singi['def'] += 5;
+                echo "\n{$singi['name']} 升级了!现在的等级是：level {$singi['level']},各项属性成长：[+5,+5,+5]=>[{$singi['hp']},{$singi['ack']},{$singi['def']}]";
+            }
+            //更新数据到数据库
+            $db->update('property',$update_data,['user_id'=>1]);
+            echo "\n---";
+            break;
+        }
+        echo "\n{$singi['name']} 攻击了 {$enemy['name']} 1 次,造成了 {$singi['dmg']} 伤害";
+        sleep(1);
     }
-    echo "\n{$singi['name']} attack {$enemy['name']},hurt {$singi['dmg']},rest cur_hp {$enemy['cur_hp']}";
-    sleep(1);
 }
+
+
 
 
