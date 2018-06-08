@@ -1,0 +1,463 @@
+<eq name="company.status" value="1">
+        <in name="user.user_type_id" value="1,2">
+            <script src="__TEMPLATE__/pc/gongzhuwangluo/static/js/socket.io.js"></script>
+            <script>
+                $(function(){
+                    //判断当前浏览类型
+                    function BrowserType() {
+                        var userAgent = navigator.userAgent; //取得浏览器的userAgent字符串
+                        var isIE = userAgent.indexOf("compatible") > -1 && userAgent.indexOf("MSIE") > -1; //判断是否IE浏览器
+
+                        if (isIE) {
+                            var reIE = new RegExp("MSIE (\\d+\\.\\d+);");
+                            reIE.test(userAgent);
+                            var fIEVersion = parseFloat(RegExp["$1"]);
+                            if (fIEVersion <= 7) {
+                                alert('您的浏览器版本过低!无法使用页面即时聊天功能!请升级到最新版已获得最佳体验!');
+                                throw new Error("您的浏览器版本过低!无法使用页面即时聊天功能!请升级到最新版已获得最佳体验!");
+                            }
+                        }
+                    }
+                    BrowserType();
+
+                    layui.use(['layim', 'jquery'], function (layim) {
+                        var mine_id = {$user.user_id|default=0};
+                        var mine_id2 = {:mt_rand(1,$user.user_id)};
+                        var mine_id3 = {:mt_rand(1,$user.user_id)};
+                        var mine_id4 = {:mt_rand(1,$user.user_id)};
+                        if (mine_id == 0) return false;
+                        var mine_ip = mine_id + ',' + mine_id2 + ',' + mine_id3 + ',' + mine_id4;
+                        var mine;//本地用户信息
+                        var loginkey = '{$user.password|default=0}';
+                        if (loginkey == 0) return false;
+                        var webim_api_key = '{$user.password|default=0}';
+                        if (webim_api_key == 0) return false;
+                        var loginkey2 = '{:md5(time().$user.password)}';
+                        var to_msg_token;//接受者msg_token
+                        var $ = layui.jquery;
+                        var domain = 'http://www.conzhu.com';
+                        var get_user_url = domain+'/home/webimApi/user?mine_ip='+mine_ip+'&webim_api_key='+webim_api_key+'&id=';
+                        var get_unread_msg_url = domain+'/home/webimApi/unread_msg?mine_ip='+mine_ip+'&webim_api_key='+webim_api_key+'&to_id=';
+                        var get_rm_unread_msg_url = domain+'/home/webimApi/rm_unread_msg?mine_ip='+mine_ip+'&webim_api_key='+webim_api_key+'&to_id=';
+                        var get_red_unread_msg_url = domain+'/home/webimApi/red_unread_msg?mine_ip='+mine_ip+'&webim_api_key='+webim_api_key+'&to_id=';
+                        var add_red_unread_msg_url = domain+'/home/webimApi/add_red_unread_msg?mine_ip='+mine_ip+'&webim_api_key='+webim_api_key;
+                        var get_images_upload_url = domain+'/home/webimApi/images_upload?mine_ip='+mine_ip+'&webim_api_key='+webim_api_key;
+                        var get_files_upload_url = domain+'/home/webimApi/flies_upload?mine_ip='+mine_ip+'&webim_api_key='+webim_api_key;
+                        var get_last_chat_user_url = domain+'/home/webimApi/get_last_chat_user?mine_ip='+mine_ip+'&webim_api_key='+webim_api_key;
+                        var get_friends_url = domain+'/home/webimApi/get_friends?mine_ip='+mine_ip+'&webim_api_key='+webim_api_key+'&mine_id='+mine_id;
+                        var socket = io(domain+':9502?mine_id='+mine_ip+'&loginkey='+loginkey+'&loginkey2='+loginkey2);
+                        var default_groupid = 1;//默认分组id
+                        var webim_server_close_link = 0;
+
+                        var title_red_point = 'title_red_point';//缩小列表红点id
+                        var msg_red_point_html = '<div id="'+title_red_point+'" style="width:13px;height:13px;position:absolute;border-radius:6px;background:#f4523b;top:6px;left:37px;z-index:1;"></div>';
+                        var layim_list_friend_red_point = 'layim_list_friend_red_point';//好友列表红点id
+                        var layim_chatlist_friend_red_point = 'layim_chatlist_friend_red_point';//聊天窗左侧列表id
+
+                        // is_focus_play=1,则强制开启消息声音提示
+                        var play_voice = function(is_focus_play){
+                            var i = document.createElement("audio");
+                            var j = layui.layim.cache();
+                            i.src=layui.cache.dir+"css/modules/layim/voice/"+j.base.voice;
+                            if(is_focus_play === 1) i.play().then(function(e){
+                            }).catch(function(err){
+                            });
+                        };
+                        //未读消息
+                        var get_unread_msg = function(mine_id){
+                            $.get(get_unread_msg_url + mine_id, function (res) {
+                                if (res !== null) {
+                                    for (var i = 0; i < res.length; i++) {
+                                        if($('.layim-chatlist-friend'+res[i]['mine_id']).html() === undefined){
+                                            set_red_point(res[i]['mine_id'],1);//红点提示
+                                            //添加到未读红点消息
+                                            var post_json_data = {
+                                                to_id: res[i]['mine_id'],
+                                                msg_id: res[i]['msg_id']
+                                            };
+                                            $.post(add_red_unread_msg_url, post_json_data, function (res) {
+                                            }, 'json');
+                                        }
+                                    }
+                                    play_voice(1);
+                                }
+                            }, 'json');
+                        };
+                        //未读红点消息
+                        var get_red_unread_msg = function(mine_id){
+                            $.get(get_red_unread_msg_url + mine_id, function (res) {
+                                if (res !== null) {
+                                    for (var i = 0; i < res.length; i++) {
+                                        var getMsg = {
+                                            username: res[i]['username'] //消息来源用户名
+                                            , avatar: res[i]['avatar'] //消息来源用户头像
+                                            , id: res[i]['mine_id'] //消息的来源ID（如果是私聊，则是用户id，如果是群聊，则是群组id）
+                                            , content: res[i]['content'] //消息内容
+                                            , mine: false //是否我发送的消息，如果为true，则会显示在右方
+                                            , timestamp: res[i]['created_at'] //服务端动态时间戳
+                                            , type: 'friend'
+                                        };
+                                        layim.getMessage(getMsg);
+                                        //删除未读消息
+                                        $.get(get_rm_unread_msg_url+res[i]['to_id']+'&msg_id='+res[i]['msg_id'],function(res){
+                                        });
+                                    }
+                                    play_voice(1);
+                                }
+                            }, 'json');
+                        };
+
+                        var set_red_point = function(id,is_msg_red_point_append){
+                            //设置红点提示
+                            if (is_msg_red_point_append === 1 && $('#'+title_red_point).html() === undefined) $('#msg_red_point_append').after(msg_red_point_html);
+                            if ($('#'+layim_list_friend_red_point+id).html() === undefined) $('#layim-friend'+id).append('<div id="'+layim_list_friend_red_point+id+'" style="width:13px;height:13px;position:absolute;border-radius:6px;background:#f4523b;top:6px;left:37px;z-index:1;"></div>');
+                            if ($('#'+layim_chatlist_friend_red_point+id).html() === undefined)$('.layim-chatlist-friend'+id).append('<div id="'+layim_chatlist_friend_red_point+id+'" style="width:13px;height:13px;position:absolute;border-radius:6px;background:#f4523b;top:6px;left:37px;z-index:1;"></div>');
+                            play_voice(1);
+                        };
+
+                        <eq name="user.user_type_id" value="1">
+                            var to_id = {$store.user_id|default=0};
+                            var to_ids = 0;
+                            var get_to_ids_url = domain+'/home/webimApi/get_to_ids?mine_ip='+mine_ip+'&webim_api_key='+webim_api_key+'&to_id=';
+                            var last_chat_id = 0;
+                            var get_user_url_func = function(to_id){
+                                //获取接受者msg_token
+                                socket.emit('get_to_msg_token',to_id);
+                                $.get(get_user_url + to_id, function (res) {
+                                    //主动弹出消息对话框
+                                    layim.chat({
+                                        name: res.data.mine.username //名称
+                                        ,type: 'friend' //聊天类型
+                                        ,avatar: res.data.mine.avatar //头像
+                                        ,id: res.data.mine.id //好友id
+                                    });
+                                    //如果有goods_id则附带商品信息进聊天窗口
+                                    res.data.mine.type = 'friend';
+                                    setTimeout(function(){
+                                        if (goods_id && store_id){
+                                            var get_goods_url = domain+'/home/webimApi/goods?goods_id=';
+                                            $.get(get_goods_url+goods_id,function(res_goods){
+                                                if(res_goods.code === 200){
+                                                    //模拟聊天对象发来消息
+                                                    var goods_content = 'a({:U("home/Company/goodsinfo")}?store_id='+store_id+'&goods_id='+goods_id+')[商品信息:\n'+'img[/public/images/home/guarantee/type'+res_goods.data.goods_type+'.png]\n商品名称：'+res_goods.data.goods_name+'\n类型：'+res_goods.data.goods_type_str+']';
+                                                    res.data.mine.content = goods_content;
+                                                    var getMsg = {
+                                                        username: mine.username //消息来源用户名
+                                                        , avatar: mine.avatar //消息来源用户头像
+                                                        , id: res.data.mine.id //消息的来源ID（如果是私聊，则是用户id，如果是群聊，则是群组id）
+                                                        , content: goods_content //消息内容
+                                                        , mine: true //是否我发送的消息，如果为true，则会显示在右方
+                                                        , timestamp: res.data.mine.timestamp //服务端动态时间戳
+                                                        , type: 'friend'
+                                                    };
+                                                    layim.getMessage(getMsg);
+                                                    //存储上面发送的消息
+                                                    var msg = {
+                                                        mine : {
+                                                            avatar : mine.avatar,
+                                                            id : mine.id,
+                                                            mine : true,
+                                                            username : mine.username
+                                                        },
+                                                        to : {
+                                                            avatar : res.data.mine.avatar,
+                                                            id : res.data.mine.id,
+                                                            name : res.data.mine.username,
+                                                            type : 'friend'
+                                                        }
+                                                    };
+                                                    msg.mine.now_time = Math.floor(new Date().getTime()/1000);
+                                                    msg.mine.content = goods_content;
+                                                    msg.to.msg_token = to_msg_token;
+                                                    socket.emit('chat_message', msg);
+                                                }
+                                            });
+                                        }
+                                    },1000);
+                                    //获取未读消息
+                                    socket.emit('get_unread_msg',mine_id);
+                                }, 'json');
+                            };
+                            //某一用户实时在线情况
+                            socket.on('is_online',function(res){
+                                if (res.status === 0){
+                                    //不在线,查询其他账号是否在线
+                                    to_ids.splice(to_ids.indexOf(res.to_id),1);
+                                    socket.emit('who_online',to_ids);
+                                }else{
+                                    get_user_url_func(res.to_id);
+                                }
+                            });
+                            //从在线客服中选择一位来聊天
+                            socket.on('who_online', function (res) {
+                                //判断聊天对象以及其子账号是否已登录聊天服务器，从中随机选择一个聊天
+                                var who_online_to_id = last_chat_id;
+                                if (res.to_id !== 0){
+                                    //在线
+                                    who_online_to_id = res.to_id;
+                                }
+                                if (who_online_to_id === 0) who_online_to_id = to_id;
+                                get_user_url_func(who_online_to_id);
+                            });
+                            var goods_id = 0;
+                            var store_id = 0;
+                            $('.chat_webim').click(function(){
+                                //支持项目详情聊天弹框
+                                var to_id2 = $(this).find('input[name="to_id"]').val();
+                                if (to_id2) to_id = to_id2;
+                                //支持项目详情聊天弹框
+                                if (to_id == 0 ) return false;
+
+                                goods_id = $(this).find('input[name="goods_id"]').val();
+                                store_id = $(this).find('input[name="store_id"]').val();
+                                //获取所属店铺所有账号(包括自己)
+                                $.get(get_to_ids_url+to_id,function(res){
+                                    to_ids = res.to_ids;
+                                    if (res.to_ids.length === 1){
+                                        //只有1个账号,弹出所属店铺主账号聊天
+                                        get_user_url_func(res.to_ids[0]);
+                                    }else{
+                                        //查询最近是否有聊过的用户
+                                        res.mine_id = mine_id;
+                                        $.post(get_last_chat_user_url,res,function(res){
+                                            if (res.to_id){
+                                                last_chat_id = res.to_id;
+                                                //查询该账号是否在线
+                                                socket.emit('is_online',res.to_id);
+                                            }else{
+                                                socket.emit('who_online',to_ids);
+                                            }
+                                        },'json');
+                                    }
+                                });
+                            });
+                        </eq>
+                        //点击页面聊天按钮弹出聊天框
+                        <eq name="user.user_type_id" value="2">
+                            $('.chat_webim').click(function(){
+                                //投保机构id
+                                var to_id = $(this).find('input[name="to_id"]').val();
+                                if (to_id == 0 ) return false;
+                                var project_id = $(this).find('input[name="project_id"]').val();
+                                get_user_url_func(to_id,project_id);
+                            });
+                            var get_user_url_func = function(to_id,project_id){
+                                //获取接受者msg_token
+                                socket.emit('get_to_msg_token',to_id);
+                                $.get(get_user_url + to_id, function (res) {
+                                    //主动弹出消息对话框
+                                    layim.chat({
+                                        name: res.data.mine.username //名称
+                                        ,type: 'friend' //聊天类型
+                                        ,avatar: res.data.mine.avatar //头像
+                                        ,id: res.data.mine.id //好友id
+                                    });
+                                    //如果有project_id则附带商品信息进聊天窗口
+                                    res.data.mine.type = 'friend';
+                                    setTimeout(function(){
+                                        if (project_id){
+                                            var get_project_url = domain+'/home/webimApi/project?project_id=';
+                                            $.get(get_project_url+project_id,function(res_project){
+                                                if(res_project.code === 200){
+                                                    res_project.data.project_pic = '/public/images/home/guarantee/type'+res_project.data.goods_variety+'.png';
+                                                    //模拟聊天对象发来消息
+                                                    var project_content = 'a({:U("home/Project/projectDetail")}?id='+res_project.data.project_id+')[需求信息:\n'+'img['+res_project.data.project_pic+']\n需求名称：'+res_project.data.project_name+'\n保函品种：'+res_project.data.goods_variety_str+']';
+                                                    res.data.mine.content = project_content;
+                                                    var getMsg = {
+                                                        username: mine.username //消息来源用户名
+                                                        , avatar: mine.avatar //消息来源用户头像
+                                                        , id: res.data.mine.id //消息的来源ID（如果是私聊，则是用户id，如果是群聊，则是群组id）
+                                                        , content: project_content //消息内容
+                                                        , mine: true //是否我发送的消息，如果为true，则会显示在右方
+                                                        , timestamp: res.data.mine.timestamp //服务端动态时间戳
+                                                        , type: 'friend'
+                                                    };
+                                                    layim.getMessage(getMsg);
+                                                    //存储上面发送的消息
+                                                    var msg = {
+                                                        mine : {
+                                                            avatar : mine.avatar,
+                                                            id : mine.id,
+                                                            mine : true,
+                                                            username : mine.username
+                                                        },
+                                                        to : {
+                                                            avatar : res.data.mine.avatar,
+                                                            id : res.data.mine.id,
+                                                            name : res.data.mine.username,
+                                                            type : 'friend'
+                                                        }
+                                                    };
+                                                    msg.mine.now_time = Math.floor(new Date().getTime()/1000);
+                                                    msg.mine.content = project_content;
+                                                    msg.to.msg_token = to_msg_token;
+                                                    socket.emit('chat_message', msg);
+                                                }
+                                            });
+                                        }
+                                    },1000);
+                                    //获取未读消息
+                                    socket.emit('get_unread_msg',mine_id);
+                                }, 'json');
+                            };
+                        </eq>
+                        //监听layim建立就绪
+                        layim.on('ready', function (res) {
+                            if (webim_server_close_link === 1){
+                                $('#layui-layim-close').remove();
+                                return false;
+                            }
+                            mine = res.mine;
+                            //查询未读消息并显示
+                            get_unread_msg(mine_id)
+                        });
+                        //监听在线状态的切换事件
+                        layim.on('online', function (res) {
+                            if (res === 'hide'){
+                                socket.emit('logout');
+                            }else{
+                                socket.open();
+                            }
+                        });
+                        //监听发送消息
+                        layim.on('sendMessage', function (res) {
+                            if (to_msg_token){
+                                // 触发服务端的chat_message事件
+                                res.mine.now_time = Math.floor(new Date().getTime()/1000);
+                                res.to.msg_token = to_msg_token;
+                                socket.emit('chat_message', res);
+                            }
+                            //获取接受者msg_token
+                            socket.emit('get_to_msg_token',res.to.id);
+                        });
+                        //每次窗口打开或切换，即更新对方的状态
+                        layim.on('chatChange', function (res) {
+                            //获取接受者msg_token
+                            if (to_msg_token == undefined) {
+                                socket.emit('get_to_msg_token',res.data.id);
+                            }
+                            socket.emit('change_online_status',res.data.id);
+                            //获取未读红点消息
+                            get_red_unread_msg(res.data.id);
+                            //移除红点
+                            $('#'+layim_list_friend_red_point+res.data.id).remove();
+                            $('#'+layim_chatlist_friend_red_point+res.data.id).remove();
+                        });
+                        //当连接服务端成功时触发connect默认事件
+                        socket.on('connect', function () {
+                            //基础配置
+                            layim.config({
+                                //初始化接口
+                                init: {
+                                    url: get_user_url + mine_id
+                                }
+
+                                ,members: {
+                                    url: get_friends_url
+                                }
+
+                                //上传图片接口
+                                , uploadImage: {
+                                    url: get_images_upload_url //（返回的数据格式见下文）
+                                }
+                                //上传文件接口
+                                ,uploadFile: {
+                                    url: get_files_upload_url
+                                }
+
+                                , brief: false //是否简约模式（若开启则不显示主面板）
+
+                                , title: '共筑通' //自定义主面板最小化时的标题
+                                //,right: '100px' //主面板相对浏览器右侧距离
+                                //,minRight: '90px' //聊天面板最小化时相对浏览器右侧距离
+                                //, initSkin: '2.jpg' //1-2 设置初始背景
+                                , isfriend: true //是否开启好友
+                                , isgroup: false //是否开启群组
+                                , min: true //是否始终最小化主面板，默认false
+                                , notice: true //是否开启桌面消息提醒，默认false
+                                , voice: 'default.wav' //声音提醒，默认开启，声音文件为：default.wav
+                                , maxLength: 16777214 // 可允许的消息最大字符长度 16MB
+
+                                , chatLog: layui.cache.dir + 'css/modules/layim/html/chatLog.html?mine_ip='+mine_ip+'&webim_api_key='+webim_api_key+'&mine_id='+mine_id //聊天记录页面地址，若不开启，剔除该项即可
+                                , copyright: true
+                            });
+                        });
+                        //单点登录
+                        socket.on('close_client',function(res){
+                            if (res.msg !== 0) layer.msg(res.msg);
+                            $('#layui-layim-close').remove();
+                            webim_server_close_link = 1;
+                        });
+                        //上线之后,获取未读消息并显示
+                        socket.on('get_unread_msg',function(res){
+                            //未读消息记录
+                            get_unread_msg(mine_id);
+                        });
+                        //获取to_msg_token
+                        socket.on('get_to_msg_token',function(res){
+                            to_msg_token = res.to_msg_token;
+                        });
+                        //更新对方状态
+                        socket.on('change_online_status',function(res){
+                            if (res.status === 0){
+                                layim.setChatStatus('<span style="color:#FF5722;">离线</span>');
+                                layim.setFriendStatus(res.to_id, 'offline'); //设置指定好友在线，即头像取消置灰
+                            }else{
+                                layim.setChatStatus('<span style="color:#FF5722;">在线</span>');
+                                layim.setFriendStatus(res.to_id, 'online'); //设置指定好友在线，即头像取消置灰
+                            }
+                        });
+                        //实时更新所有聊天对象中,我的在/离线状态
+                        socket.on('me_online',function(res){
+                            if (parseInt(res.mine_id) === mine_id) return false;
+                            if (res.status === 0){
+                                layim.setChatStatus('<span style="color:#FF5722;">离线</span>');
+                                layim.setFriendStatus(mine_id, 'offline'); //设置指定好友在线，即头像取消置灰
+                            }else{
+                                layim.setChatStatus('<span style="color:#FF5722;">在线</span>');
+                                layim.setFriendStatus(mine_id, 'online'); //设置指定好友在线，即头像取消置灰
+                            }
+                        });
+                        //接收服务端消息
+                        socket.on('chat_message_from_server', function (res) {
+                            if($('.layim-chatlist-friend'+res.mine.id+'.layim-this').html() === undefined){
+                                //加入未读消息
+                                var post_json_data = {
+                                    to_id : res.mine.id,
+                                    msg_id : res.msgid
+                                };
+                                $.post(add_red_unread_msg_url,post_json_data,function(res){
+                                },'json');
+                                //红点提示
+                                set_red_point(res.mine.id,1);
+                            }else{
+                                res.mine.mine = false;
+                                res.mine.type = 'friend';
+                                layim.getMessage(res.mine)
+                            }
+                        });
+                        //心跳
+                        socket.on('heart', function (res) {
+                            socket.emit('heart', 1);
+                        });
+                        //添加朋友到聊天列表
+                        socket.on('addfriend',function(res){
+                            if (res.username){
+                                var username = res.username;
+                            }else{
+                                username = res.name;
+                            }
+                            var friend_data = {
+                                type : 'friend',
+                                groupid : default_groupid,
+                                avatar : res.avatar,
+                                username : username,
+                                id : res.id
+                            };
+                            layim.addList(friend_data);
+                        })
+                    });
+                });
+            </script>
+        </in>
+</eq>
