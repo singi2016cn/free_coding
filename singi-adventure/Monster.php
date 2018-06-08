@@ -29,7 +29,7 @@ class Monster
         $this->name = $name;
         $this->hp = $hp;
         $this->att = $att;
-        $this->def = $def;
+        $this->pd = $def;
     }
 
     /**
@@ -41,7 +41,7 @@ class Monster
     }
 
     public function attack($enemy){
-        $enemy->hurt($enemy->getAtt() - $this->def);
+        $enemy->hurt($enemy->getAtt() - $this->pd);
     }
 
     /**
@@ -98,7 +98,7 @@ class Monster
      */
     public function getDef()
     {
-        return $this->def;
+        return $this->pd;
     }
 
     /**
@@ -106,7 +106,7 @@ class Monster
      */
     public function setDef($def)
     {
-        $this->def = $def;
+        $this->pd = $def;
     }
 
     /**

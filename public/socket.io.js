@@ -1090,7 +1090,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.EVENT = 2;
 	
 	/**
-	 * Packet type `ack`.
+	 * Packet type `pa`.
 	 *
 	 * @api public
 	 */
@@ -1114,7 +1114,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.BINARY_EVENT = 5;
 	
 	/**
-	 * Packet type `binary ack`. For acks with binary arguments.
+	 * Packet type `binary pa`. For acks with binary arguments.
 	 *
 	 * @api public
 	 */
@@ -6143,9 +6143,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  packet.options = {};
 	  packet.options.compress = !this.flags || false !== this.flags.compress;
 	
-	  // event ack callback
+	  // event pa callback
 	  if ('function' === typeof args[args.length - 1]) {
-	    debug('emitting packet with ack id %d', this.ids);
+	    debug('emitting packet with pa id %d', this.ids);
 	    this.acks[this.ids] = args.pop();
 	    packet.id = this.ids++;
 	  }
@@ -6262,8 +6262,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  debug('emitting event %j', args);
 	
 	  if (null != packet.id) {
-	    debug('attaching ack callback to event');
-	    args.push(this.ack(packet.id));
+	    debug('attaching pa callback to event');
+	    args.push(this.pa(packet.id));
 	  }
 	
 	  if (this.connected) {
@@ -6274,12 +6274,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 	
 	/**
-	 * Produces an ack callback to emit with an event.
+	 * Produces an pa callback to emit with an event.
 	 *
 	 * @api private
 	 */
 	
-	Socket.prototype.ack = function (id) {
+	Socket.prototype.pa = function (id) {
 	  var self = this;
 	  var sent = false;
 	  return function () {
@@ -6287,7 +6287,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (sent) return;
 	    sent = true;
 	    var args = toArray(arguments);
-	    debug('sending ack %j', args);
+	    debug('sending pa %j', args);
 	
 	    self.packet({
 	      type: parser.ACK,
@@ -6305,13 +6305,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 	
 	Socket.prototype.onack = function (packet) {
-	  var ack = this.acks[packet.id];
-	  if ('function' === typeof ack) {
-	    debug('calling ack %s with %j', packet.id, packet.data);
-	    ack.apply(this, packet.data);
+	  var pa = this.acks[packet.id];
+	  if ('function' === typeof pa) {
+	    debug('calling pa %s with %j', packet.id, packet.data);
+	    pa.apply(this, packet.data);
 	    delete this.acks[packet.id];
 	  } else {
-	    debug('bad ack %s', packet.id);
+	    debug('bad pa %s', packet.id);
 	  }
 	};
 	

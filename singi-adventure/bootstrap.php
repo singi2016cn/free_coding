@@ -13,7 +13,7 @@ require_once 'func.php';
 require_once ROOT_PATH . 'config/db.php';
 
 while (1){
-    $singi = $db->get('property',['name','level','exp','hp','ack','def'],['user_id'=>1]);
+    $singi = $db->get('roles',['name','level','exp','hp','pa','pd'],['user_id'=>1]);
 
     if (!$singi) break;
 
@@ -26,11 +26,12 @@ while (1){
     $enemy['cur_hp'] = $enemy['hp'];
 
     //当前回合dmg
-    $singi['dmg'] = ensure_min_eq_zero($singi['ack'] - $enemy['def']);
-    $enemy['dmg'] = ensure_min_eq_zero($enemy['ack'] - $singi['def']);
+    $singi['dmg'] = ensure_min_eq_zero($singi['pa'] - $enemy['pd']);
+    $enemy['dmg'] = ensure_min_eq_zero($enemy['pa'] - $singi['pd']);
 
     while (1){
         if($singi['dmg'] == 0 && $enemy['dmg'] == 0){
+            echo "\n双方势均力敌,无法对地方造成伤害!";
             echo "\n---";
             break;
         }
@@ -54,12 +55,12 @@ while (1){
             if ($singi['exp'] > $level_singi[$singi['level']]){
                 $update_data['level'] = $singi['level'] += 1;
                 $update_data['hp'] =$singi['hp'] += 5;
-                $update_data['ack'] =$singi['ack'] += 5;
-                $update_data['def'] =$singi['def'] += 5;
-                echo "\n{$singi['name']} 升级了!现在的等级是：level {$singi['level']},各项属性成长：[+5,+5,+5]=>[{$singi['hp']},{$singi['ack']},{$singi['def']}]";
+                $update_data['pa'] =$singi['pa'] += 5;
+                $update_data['pd'] =$singi['pd'] += 5;
+                echo "\n{$singi['name']} 升级了!现在的等级是：level {$singi['level']},各项属性成长：[+5,+5,+5]=>[{$singi['hp']},{$singi['pa']},{$singi['pd']}]";
             }
             //更新数据到数据库
-            $db->update('property',$update_data,['user_id'=>1]);
+            $db->update('roles',$update_data,['user_id'=>1]);
             echo "\n---";
             break;
         }
