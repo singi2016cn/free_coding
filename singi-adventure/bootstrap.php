@@ -9,11 +9,25 @@
 define('ROOT_PATH',dirname(__DIR__).DIRECTORY_SEPARATOR);
 
 require_once ROOT_PATH . 'vendor/autoload.php';
+
+use Symfony\Component\Cache\Simple\FilesystemCache;
+
 require_once 'func.php';
 require_once ROOT_PATH . 'config/db.php';
 
+$cache = new FilesystemCache();
+
 while (1){
-    $singi = $db->get('roles',['name','level','exp','hp','pa','pd'],['user_id'=>1]);
+    $singi = $cache->get('player',array(
+        'name' => 'singi',
+        'hp' => 20,
+        'ack' => 10,
+        'def' => 10,
+        'kill' => 1000,
+        'dodge' => 1000,
+        'level' => 1,
+        'exp' => 0,
+    ));
 
     if (!$singi) break;
 
@@ -26,8 +40,8 @@ while (1){
     $enemy['cur_hp'] = $enemy['hp'];
 
     //当前回合dmg
-    $singi['dmg'] = ensure_min_eq_zero($singi['pa'] - $enemy['pd']);
-    $enemy['dmg'] = ensure_min_eq_zero($enemy['pa'] - $singi['pd']);
+    $singi['dmg'] = ensure_min_eq_zero($singi['ack'] - $enemy['def']);
+    $enemy['dmg'] = ensure_min_eq_zero($enemy['ack'] - $singi['def']);
 
     while (1){
         if($singi['dmg'] == 0 && $enemy['dmg'] == 0){
@@ -36,16 +50,39 @@ while (1){
             break;
         }
 
-        $singi['cur_hp'] -= $enemy['dmg'];//计算剩余生命值
+        $enemy_dmg = $enemy['dmg'];
+        $enemy_echo_skill = "";
+        if (mt_rand(0,10000) < $enemy['kill']){
+            $enemy_echo_skill = "发动了必杀一击 ";
+            $enemy_dmg *= 3;//必杀3倍伤害
+        }
+        $singi_echo_dodge = "";
+        if (mt_rand(0,10000) < $singi['dodge']){
+            $singi_echo_dodge = " 但被闪避";
+            $enemy_dmg = 0;
+        }
+        echo "\n{$enemy['name']} {$enemy_echo_skill}攻击了 {$singi['name']} 1 次{$singi_echo_dodge},造成了 {$enemy_dmg} 伤害";
+        $singi['cur_hp'] -= $enemy_dmg;//计算剩余生命值
         if ($singi['cur_hp'] < 1){
             echo "\n{$singi['name']} 被击败了!游戏结束";
             echo "\n---";
             break;
         }
-        echo "\n{$enemy['name']} 攻击了 {$singi['name']} 1 次,造成了 {$enemy['dmg']} 伤害";
         sleep(1);
 
-        $enemy['cur_hp'] -= $singi['dmg'];
+        $singi_dmg = $singi['dmg'];
+        $singi_echo_skill = "";
+        if (mt_rand(0,10000) < $singi['kill']){
+            $singi_echo_skill = "发动了必杀一击 ";
+            $singi_dmg *= 3;//必杀3倍伤害
+        }
+        $enemy_echo_dodge = "";
+        if (mt_rand(0,10000) < $enemy['dodge']) {
+            $enemy_echo_dodge = " 但被闪避";
+            $singi_dmg = 0;
+        }
+        echo "\n{$singi['name']} {$singi_echo_skill}攻击了 {$enemy['name']} 1 次{$enemy_echo_dodge},造成了 {$singi_dmg} 伤害";
+        $enemy['cur_hp'] -= $singi_dmg;
         if ($enemy['cur_hp'] < 1){
             echo "\n{$singi['name']} 赢得了胜利!获得经验值 {$enemy['exp']}";
             //TODO 是否获得宝物
@@ -55,16 +92,15 @@ while (1){
             if ($singi['exp'] > $level_singi[$singi['level']]){
                 $update_data['level'] = $singi['level'] += 1;
                 $update_data['hp'] =$singi['hp'] += 5;
-                $update_data['pa'] =$singi['pa'] += 5;
-                $update_data['pd'] =$singi['pd'] += 5;
-                echo "\n{$singi['name']} 升级了!现在的等级是：level {$singi['level']},各项属性成长：[+5,+5,+5]=>[{$singi['hp']},{$singi['pa']},{$singi['pd']}]";
+                $update_data['ack'] =$singi['ack'] += 5;
+                $update_data['def'] =$singi['def'] += 5;
+                echo "\n{$singi['name']} 升级了!现在的等级是：level {$singi['level']},各项属性成长：[+5,+5,+5]=>[{$singi['hp']},{$singi['ack']},{$singi['def']}]";
             }
-            //更新数据到数据库
-            $db->update('roles',$update_data,['user_id'=>1]);
+            //更新数据
+            $cache->set('player',array_merge($update_data,$singi));
             echo "\n---";
             break;
         }
-        echo "\n{$singi['name']} 攻击了 {$enemy['name']} 1 次,造成了 {$singi['dmg']} 伤害";
         sleep(1);
     }
 }
