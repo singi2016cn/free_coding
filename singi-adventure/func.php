@@ -30,16 +30,20 @@ if (!function_exists('find_enemy')) {
         global $level_enemy;
         $level = mt_rand(1, $level_user);
         $hp = mt_rand($level_enemy[$level]['hp'][0], $level_enemy[$level]['hp'][1]);
-        $ack = mt_rand($level_enemy[$level]['pa'][0], $level_enemy[$level]['pa'][1]);
-        $def = mt_rand($level_enemy[$level]['pd'][0], $level_enemy[$level]['pd'][1]);
+        $ack = mt_rand($level_enemy[$level]['ack'][0], $level_enemy[$level]['ack'][1]);
+        $def = mt_rand($level_enemy[$level]['def'][0], $level_enemy[$level]['def'][1]);
         $exp = mt_rand($level_enemy[$level]['exp'][0], $level_enemy[$level]['exp'][1]);
+        $kill = mt_rand($level_enemy[$level]['kill'][0], $level_enemy[$level]['kill'][1]);
+        $dodge = mt_rand($level_enemy[$level]['dodge'][0], $level_enemy[$level]['dodge'][1]);
         $enemy = [
             'name' => make_name(),
             'hp' => $hp,
-            'pa' => $ack,
-            'pd' => $def,
+            'ack' => $ack,
+            'def' => $def,
             'exp' => $exp,
-            'level' => $level
+            'level' => $level,
+            'kill' => $kill,
+            'dodge' => $dodge,
         ];
         return $enemy;
     }
