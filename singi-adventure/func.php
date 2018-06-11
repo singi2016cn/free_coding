@@ -15,7 +15,9 @@ if (!function_exists('make_name')) {
      */
     function make_name()
     {
-        return Faker\Factory::create()->name;
+        $faker = new Faker\Generator();
+        $faker->addProvider(new Faker\Provider\zh_CN\Person($faker));
+        return $faker->name;
     }
 }
 
