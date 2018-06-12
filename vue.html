@@ -62,12 +62,12 @@
                 <div class="col-md-6 col-md-offset-3">
                     <div class="panel panel-default">
                         <div class="panel-heading">提示</div>
-                        <div class="panel-body">
-                            横: {{ detail }}
+                        <div class="panel-body" id="h_tip">
+
                         </div>
                         <hr style="margin:0">
-                        <div class="panel-body">
-                            竖: {{ detail }}
+                        <div class="panel-body" id="v_tip">
+
                         </div>
                     </div>
                 </div>
@@ -99,20 +99,29 @@
             {
                 at : 3,
                 h : [2],
+                h_tip : '你好',
                 v : [],
+                v_tip : ''
             },
             {
                 at : 12,
                 h : [],
+                h_tip : '',
                 v : [2],
+                v_tip : '非常好'
             },
     ];
 
     function word_tips(id){
         $('#'+id).parent().addClass('warning');
+
         for(var i in cells){
             var cell = cells[i];
             if (cell.at === id){
+                if (cell.h_tip) $('#h_tip').html('横:'+cell.h_tip);
+                if (cell.v_tip) $('#v_tip').html('竖:'+cell.v_tip);
+                if (cell.h_tip || cell.v_tip) $('#tip_div').show();
+
                 var h = cell.h;
                 for(var h_i in h){
                     $('#'+h[h_i]).parent().addClass('info');
@@ -127,7 +136,7 @@
 
     function tips(){
         $('td').removeClass();
-        $('#tip_div').hidden();
+        $('#tip_div').hide();
     }
 
 </script>
