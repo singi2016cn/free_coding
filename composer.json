@@ -12,6 +12,8 @@
         "dompdf/dompdf": "^0.8.2",
         "tecnickcom/tcpdf": "^6.2",
         "jpgraph/jpgraph": "^4.0",
-        "symfony/cache": "^4.1"
+        "symfony/cache": "^4.1",
+        "aliyuncs/oss-sdk-php": "^2.3",
+        "fabpot/goutte": "^3.2"
     }
 }
