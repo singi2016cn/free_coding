@@ -17,5 +17,5 @@ $db = new Medoo([
     'database_name' => 'free_code',
     'server' => 'localhost',
     'username' => 'root',
-    'password' => ''
+    'password' => '123456'
 ]);
