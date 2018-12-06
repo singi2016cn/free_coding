@@ -45,7 +45,8 @@ function start($is_test=true){
     $book['from_platform'] = 'jd';
     //开始发起请求
     $client = new Client();
-    $resource_url = str_replace('ITEM_ID',get_item_id($is_test),RESOURCE_URL);
+    $item_id = get_item_id($is_test);
+    $resource_url = str_replace('ITEM_ID',$item_id,RESOURCE_URL);
     $book['resource_url'] = $resource_url;
     var_dump('start work '.$book['resource_url']);
     $crawler = $client->request('GET', $resource_url);
@@ -68,7 +69,7 @@ function start($is_test=true){
         }
     }
     //更多信息
-    $resource_more_file_url = str_replace('ITEM_ID',get_item_id($is_test),RESOURCE_MORE_INFO_URL);
+    $resource_more_file_url = str_replace('ITEM_ID',$item_id,RESOURCE_MORE_INFO_URL);
     $book['resource_more_file_url'] = $resource_more_file_url;
     $crawler_more_info = $client->request('GET', $resource_more_file_url);
     $book_more_info = $client->getInternalResponse()->getContent();
