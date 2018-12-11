@@ -7,14 +7,13 @@
  * 爬去京东单个图书信息
  * https://item.jd.com/11993134.html,根据该网站末尾的id获取对于的图书信息
  */
-
 require_once dirname(__DIR__).'/vendor/autoload.php';
 require_once dirname(__DIR__).'/config/db.php';
 
 use Goutte\Client;
 
 //配置
-define('INIT_ITEM_ID',11993134);//初始item_id
+define('INIT_ITEM_ID',11000000);//初始item_id
 define('RESOURCE_URL','https://item.jd.com/ITEM_ID.html');//资源url
 define('RESOURCE_MORE_INFO_URL','https://dx.3.cn/desc/ITEM_ID?cdn=2&callback=showdesc');//更多信息资源url
 //详细信息下标转换
@@ -35,10 +34,13 @@ define('ZH2EN',[
 var_dump('start work...');
 while (1){
     $book = start(0);
-    var_dump('start write data in table...');
     //写入数据库
-    $db->insert('books',$book);
-    var_dump('work '.$book['resource_url'].' is done.');
+    if ($book){
+        $db->insert('books',$book);
+        var_dump('work '.$book['resource_url'].' is done.');
+    }else{
+        var_dump('work '.$book['resource_url'].' pass.');
+    }
 }
 
 function start($is_test=true){
@@ -48,9 +50,11 @@ function start($is_test=true){
     $item_id = get_item_id($is_test);
     $resource_url = str_replace('ITEM_ID',$item_id,RESOURCE_URL);
     $book['resource_url'] = $resource_url;
-    var_dump('start work '.$book['resource_url']);
     $crawler = $client->request('GET', $resource_url);
     //获取主要信息
+    if ($crawler->filter('#name > div.sku-name')->count()<=0){
+        return null;
+    }
     $book['title'] = trim($crawler->filter('#name > div.sku-name')->text());
     $book['author'] = trim($crawler->filter('#p-author')->text());
     $book['cover'] = trim($crawler->filter('#spec-n1 > img')->image()->getUri());
@@ -74,7 +78,7 @@ function start($is_test=true){
     $crawler_more_info = $client->request('GET', $resource_more_file_url);
     $book_more_info = $client->getInternalResponse()->getContent();
     if ($book_more_info){
-        $book_more_info_html = json_decode(iconv("gbk", "utf-8", substr($book_more_info,9,-1)),true)['content'];
+        $book_more_info_html = json_decode(utf8_encode(substr($book_more_info,9,-1)),true)['content'];
     }
     if ($book_more_info_html){
         $crawler_more_info->addHtmlContent($book_more_info_html);
