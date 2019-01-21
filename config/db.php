@@ -14,7 +14,7 @@ use Medoo\Medoo;
 
 $db = new Medoo([
     'database_type' => 'mysql',
-    'database_name' => 'test',
+    'database_name' => 'bdx',
     'server' => 'localhost',
     'username' => 'root',
     'password' => '123456'
