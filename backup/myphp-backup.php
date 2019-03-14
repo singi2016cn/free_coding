@@ -11,6 +11,7 @@
  */
 define("DB_USER", 'root');
 define("DB_PASSWORD", '123456');
+$db_names = ['shop_gongzhu','test'];
 define("DB_NAME", ['shop_gongzhu','test']);
 define("DB_HOST", 'localhost');
 define("BACKUP_DIR", 'myphp-backup-files'); // Comment this line to use same script's directory ('.')
@@ -393,12 +394,12 @@ if (php_sapi_name() != "cli") {
     echo '<div style="font-family: monospace;">';
 }
 
-foreach(DB_NAME as $db_name){
+foreach($db_names as $db_name){
     $backupDatabase = new Backup_Database(DB_HOST, DB_USER, DB_PASSWORD, $db_name, CHARSET);
     $result = $backupDatabase->backupTables(TABLES, BACKUP_DIR) ? 'OK' : 'KO';
     $backupDatabase->obfPrint('Backup result: ' . $result, 1);
 
-// Use $output variable for further processing, for example to send it by email
+    // Use $output variable for further processing, for example to send it by email
     $output = $backupDatabase->getOutput();
 }
 
