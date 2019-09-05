@@ -14,6 +14,8 @@
         "jpgraph/jpgraph": "^4.0",
         "symfony/cache": "^4.1",
         "aliyuncs/oss-sdk-php": "^2.3",
-        "fabpot/goutte": "^3.2"
+        "fabpot/goutte": "^3.2",
+        "alchemy/zippy": "^0.4.9",
+        "league/oauth2-server": "^7.3"
     }
 }
