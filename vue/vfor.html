@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .red {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <ul>
+            <li v-for="(v,k) in movies" @click="changeRed(k)" :class="{red: v.isRed}">{{k}}{{v.name}}</li>
+        </ul>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                movies: [
+                    {name:'黄飞鸿',isRed:'true'},
+                    {name:'叶问',isRed:'true'},
+                    {name:'陈真',isRed:'true'},
+                ],
+            },
+            methods: {
+                changeRed: function (k) {
+                    this.movies[k].isRed = !this.movies[k].isRed;
+                },
+            }
+        })
+    </script>
+</body>
+</html>
