@@ -1,0 +1,10 @@
+*
+!.gitignore
+!windows-dlls/*
+!windows-dlls/
+!config.m4
+!core.h
+!php_tonyenc.h
+!tonyenc.c
+!tonyenc.php
+!README.md

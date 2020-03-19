@@ -7,7 +7,7 @@
         "niklaslu/php-rsa": "^1.0",
         "respect/validation": "^1.1",
         "fzaninotto/faker": "^1.7",
-        "phpoffice/phpspreadsheet": "^1.2",
+        "phpoffice/phpspreadsheet": "^1.10",
         "mpdf/mpdf": "^7.1",
         "dompdf/dompdf": "^0.8.2",
         "tecnickcom/tcpdf": "^6.2",
@@ -16,6 +16,11 @@
         "aliyuncs/oss-sdk-php": "^2.3",
         "fabpot/goutte": "^3.2",
         "alchemy/zippy": "^0.4.9",
-        "league/oauth2-server": "^7.3"
+        "league/oauth2-server": "^7.3",
+        "monolog/monolog": "^1.24",
+        "phpunit/phpunit": "^7.5",
+        "singi2016cn/file_tools": "^0.1.1",
+        "inhere/php-validate": "^2.7",
+        "jasig/phpcas": "^1.3"
     }
 }

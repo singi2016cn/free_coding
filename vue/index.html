@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app">
+        <div v-if="loading">正在加载...</div>
+        <ul id="finger-div">
+            <li v-for="item in items" :id="item.id">{{ item.code }}</li>
+        </ul>
+    </div>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="js/transform.js"></script>
+<script src="js/alloy_finger.js"></script>
+<script>
+    let app = new Vue({
+        el: '#app',
+        data: {
+            loading: true,
+            items: [],
+            count: 0,
+            request_data: {
+                page: 1,
+                limit: 10,
+                search_data: '',
+            },
+        },
+        methods: {
+            searchData: function(data){
+                axios
+                    .get('https://api.coindesk.com/v1/bpi/currentprice.json')
+                    .then(res => {
+                        this.items = res.data.bpi;
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    })
+                    .finally(() => {
+                        this.loading = false;
+                    })
+            },
+        },
+        mounted: function(){
+            this.searchData();
+        },
+    })
+
+    var el = document.getElementById("finger-div");
+    Transform(el);
+    var initScale = 1;
+    var gesture = new AlloyFinger(el, {
+        rotate: function (evt) {
+            el.rotateZ += evt.angle;
+        },
+        pinchStart: function () {
+            initScale = el.scaleX;
+        },
+        pinch: function (evt) {
+            el.scaleX = el.scaleY = initScale * evt.zoom;
+        },
+        pressMove: function (evt) {
+            el.translateX += evt.deltaX;
+            el.translateY += evt.deltaY;
+        },
+        tap: function (evt) {
+            console.log(el.scaleX + "_" + el.scaleY + "_" + el.rotateZ + "_" + el.translateX + "_" + el.translateY);
+            console.log("tap");
+        },
+        doubleTap: function (evt) {
+            console.log("doubleTap");
+        },
+        longTap: function (evt) {
+            console.log("longTap");
+        },
+        swipe: function (evt) {
+            console.log("swipe" + evt.direction);
+        }
+
+    });
+
+</script>
+</body>
+</html>

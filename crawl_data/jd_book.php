@@ -69,7 +69,9 @@ function start($is_test=true){
     if ($book_param){
         foreach($book_param as $v){
             $v_arr = explode('：',$v);
-            if (isset($v_arr[0]) && isset(ZH2EN[$v_arr[0]])) $book[ZH2EN[$v_arr[0]]] = trim($v_arr[1]);
+            if (isset($v_arr[0]) && isset(ZH2EN[$v_arr[0]])){
+                $book[ZH2EN[$v_arr[0]]] = trim($v_arr[1]);
+            }
         }
     }
     //更多信息
