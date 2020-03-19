@@ -1,5 +1,0 @@
-/data/*
-!/data/demo-source.sql
-!/data/demo-target.sql
-.*
-!/.gitignore
